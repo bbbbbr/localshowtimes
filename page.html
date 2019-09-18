@@ -17,12 +17,15 @@
     }
 
     a {
-      color: #B4E8EF;
-      text-decoration: none;
+        color: #B4E8EF;
+        text-decoration: none;
     }
 
-    a.expired {
-      color: darkgrey;
+    .expired {
+        color: darkgrey;
+    }
+    .late_show {
+        color: #4c9bd8;
     }
 
     .title {
@@ -383,8 +386,10 @@ function parse_showtimes(response, theater_obj) {
                 var scount = 0;
                 ag.showtimes.forEach(function (showtime) {
 
+                    // TODO: move to function showtime_render()
+
                     var href = "";
-                    var expired = showtime.expired;
+                    var show_class = "";
 
                     try { href = showtime.links[0].href; }
                         catch(err) { }; // console.log(err.message); }
@@ -393,16 +398,17 @@ function parse_showtimes(response, theater_obj) {
                     var str_date = format_date(show_date);
                     var str_time = format_time(show_date);
 
+                    if (showtime.expired == true)
+                        show_class = "expired";
+                    else if (show_date.getHours() > 18)
+                        show_class = "late_show";
+
                     scount++;
                     // display show time for first entry only
                     if (scount == 1)
                         output_append( pad_r(str_date + " : ", 13) );
 
-                    // output_append("  " + str_time);
-                    if (expired == false)
-                        output_append("<a href=" + href + ">" + pad_l(str_time, 10) + "</a>");
-                    else
-                        output_append("<a class=\"expired\" href=" + href + ">" + pad_l(str_time, 10) + "</a>");
+                    output_append("<a class=\"" + show_class + "\" href=" + href + ">" + pad_l(str_time, 10) + "</a>");
 
                     // console.log("     * " + str_date + " - " + str_time + "  " + href + " " );
                     console.log("     * " + str_date + " - " + str_time );
