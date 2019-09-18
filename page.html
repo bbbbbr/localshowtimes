@@ -38,6 +38,7 @@
 
 var theater_data  = {};
 var str_output    = "";
+var last_theater  = "";
 
 var p_zip        = "PARAM_ZIP_CODE"
 var p_num_result = "PARAM_NUM_RESULTS"
@@ -45,6 +46,7 @@ var p_code       = "PARAM_THEATER_CODE"
 var p_date       = "PARAM_DATE"
 
 var date_req_max = 2; // Number of days into the future to request
+var wait_time    = 50; // in msec
 
 // GLOBALS
 var url_theaters_by_zip   = "https://flixster.com/api/backstage/autocomplete/v2?searchText=" + p_zip + "&pageSize=" + p_num_result + "&page=1"
@@ -82,6 +84,7 @@ function ajax_get(url, callback, param) {
 }
 
 
+// TODO: use a queue instead
 // https://stackoverflow.com/questions/951021/what-is-the-javascript-version-of-sleep
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -136,14 +139,17 @@ function output_append(str_add) {
 }
 
 
-function get_date_today() {
-    var today = new Date();
-    var dd = String(today.getDate()).padStart(2, '0');
-    var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
-    var yyyy = today.getFullYear();
+function get_date_relative_to_today(date_offset) {
 
-    today = yyyy + '-' + mm + '-' + dd;
-    return (today);
+    var tdate = new Date();
+    tdate.setDate(tdate.getDate() + date_offset);
+
+    var dd = String(tdate.getDate()).padStart(2, '0');
+    var mm = String(tdate.getMonth() + 1).padStart(2, '0'); //January is 0!
+    var yyyy = tdate.getFullYear();
+
+    tdate = yyyy + '-' + mm + '-' + dd;
+    return (tdate);
 }
 
 
@@ -199,9 +205,14 @@ function handle_theaters_by_zip(response, param) {
         if ( response[i].hasOwnProperty('id') ) {
             // Create theater entry
 //            console.log( "Theater " + i + ": " + theater_data[i].name + " (" + theater_data[i].id + ")" );
-            // request_theater_showtimes( theater_data[i].id, get_date_today() );
-            request_theater_dates(theater_data[i].id);
-            sleep(100);
+
+            // request_theater_dates(theater_data[i].id);
+
+            // Request multiple dates per theather
+            for (var date_inc=0; date_inc < date_req_max; date_inc++) {
+                request_theater_showtimes( theater_data[i].id, get_date_relative_to_today(date_inc) );
+                sleep(wait_time);
+            }
         }
     }
 
@@ -232,6 +243,7 @@ function request_theater_dates(theater_code) {
 //   }
 // }
 
+// DISABLED:
 // Request a list of nearby theaters
 function handle_theater_dates(response, theater_code) {
 
@@ -245,7 +257,7 @@ function handle_theater_dates(response, theater_code) {
                     date_count++;
 //                    console.log( "Theater: " + theater_code + " @ " + dv );
                     request_theater_showtimes( theater_code, dv );
-                    sleep(100);
+                    sleep(wait_time);
                 }
             });
         }
@@ -308,12 +320,12 @@ function get_theater_object(response, theater_code) {
 }
 
 
-
-// theater    date    show    showtimes
-// A1          B1       C1       D1, D2, D3
-//                      C2       D1, D2, D3
-//             B2       C1       D1, D2, D3
-//                      C2       D1, D2, D3
+// Example output:
+// theater1   show1     date1     showtimes1
+//            show2     date1     showtimes1
+//                                showtimes2
+// theater2   show1     date1     showtimes1
+//            show2     date1     showtimes1
 
 
 function parse_showtimes(response, theater_obj) {
@@ -322,8 +334,14 @@ function parse_showtimes(response, theater_obj) {
 //        theater_obj.titles = {};
 
     // Theater name
-    console.log( "Theater " +": " + theater_obj.name + " (" + theater_obj.id + ")" );
-    output_append( "<span class=\"theater\">" + "Theater " +": " + theater_obj.name + "\n" + "</span>");
+    console.log( "\n\nTheater " +": " + theater_obj.name + " (" + theater_obj.id + ")" );
+
+    // Try to not repeat theater name
+    if (theater_obj.name != last_theater)
+        output_append( "\n\n<span class=\"theater\">" + "Theater " +": " + theater_obj.name + "\n" + "</span>");
+    else
+        output_append( pad_l(". . . . . .", 15) + pad_l(". . . . . .", 41) + "\n");
+    last_theater = theater_obj.name;
 
     response.movies.forEach(function (m) {
 
@@ -376,8 +394,8 @@ function parse_showtimes(response, theater_obj) {
         });
     });
 
-    // Closing line break
-    output_append("\n");
+//    // Closing line break
+//    output_append("\n");
 
 
 //    console.log (theater_obj);
@@ -399,8 +417,8 @@ function handle_theater_showtimes(response, theater_code) {
 
 // -> request_theaters_by_zip
 //    -> handle_theaters_by_zip
-//       -> request_theater_dates (param: theater_id)
-//          -> handle_theater_dates
+// DISABLED:      -> request_theater_dates (param: theater_id)
+// DISABLED:         -> handle_theater_dates
 //             -> request_theater_showtimes (param: theater_id)
 //               -> handle_theater_showtimes
 
@@ -426,9 +444,7 @@ window.onload = function () { start_request(); }
 
 </head>
 
-<body>
-  <div id="output">Loading...</div>
-</body>
+<body><div id="output">Loading...</div></body>
 
 <html>
 
