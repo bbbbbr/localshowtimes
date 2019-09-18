@@ -45,6 +45,12 @@ function ajax_get(url, callback) {
 }
 
 
+// https://stackoverflow.com/questions/951021/what-is-the-javascript-version-of-sleep
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
 // Returns MM/DD/YYYY
 function format_date(date) {
   return date.getMonth()+1 + "/" + date.getDate() + "/" + date.getFullYear()
@@ -133,10 +139,9 @@ function handle_theaters_by_zip(response) {
     for (var i=0; i < response.length; i++) {
         if ( response[i].hasOwnProperty('id') ) {
             // Create theater entry
-
 //            console.log( "Theater " + i + ": " + theater_data[i].name + " (" + theater_data[i].id + ")" );
-// TODO: DISABLED FOR TESTING
             request_theater_showtimes( theater_data[i].id, get_date_today() );
+            sleep(100);
         }
     }
 
@@ -158,9 +163,9 @@ function request_theater_showtimes(theater_code, req_date) {
     req_url = req_url.replace(p_code, theater_code);
     req_url = req_url.replace(p_date, req_date);
 
-//    console.log (theater_code);
-//    console.log (req_date);
-//    console.log (req_url);
+    console.log (theater_code);
+    console.log (req_date);
+    console.log (req_url);
 
     ajax_get(req_url, handle_theater_showtimes );
 }
@@ -196,7 +201,7 @@ function get_theater_object(response) {
                     // Found a match? Set the local theater id to it
                     if ( response.movieIds[i].value == theater_data[t].id ) {
 
-                        theater_obj = theater_data[i];
+                        theater_obj = theater_data[t];
 //                        console.log ("Found match " + theater_obj.id);
 
                         return(theater_obj);
