@@ -37,6 +37,7 @@
 <script>
 
 var theater_data  = {};
+var request_queue = {};
 var str_output    = "";
 var last_theater  = "";
 
@@ -46,7 +47,7 @@ var p_code       = "PARAM_THEATER_CODE"
 var p_date       = "PARAM_DATE"
 
 var date_req_max = 2; // Number of days into the future to request
-var wait_time    = 50; // in msec
+var wait_time    = 100; // in msec
 
 // GLOBALS
 var url_theaters_by_zip   = "https://flixster.com/api/backstage/autocomplete/v2?searchText=" + p_zip + "&pageSize=" + p_num_result + "&page=1"
@@ -128,7 +129,14 @@ function pad_r(str,padlen) {
 //
 function reset_theater_info()
 {
+    // Reset theater data
     theater_data = {};
+
+    // Reset queue
+    request_queue = {};
+    request_queue['theater_id'] = [];
+    request_queue['req_date']   = [];
+
     str_output = "";
     document.getElementById("output").innerHTML = str_output;
 }
@@ -180,8 +188,6 @@ function request_theaters_by_zip(zip_code, num_results) {
     ajax_get(req_url, handle_theaters_by_zip, '');
 }
 
-
-
 // [
 //   {
 //     "id": "qA9uOxfpjtlOiNd",
@@ -210,12 +216,14 @@ function handle_theaters_by_zip(response, param) {
 
             // Request multiple dates per theather
             for (var date_inc=0; date_inc < date_req_max; date_inc++) {
-                request_theater_showtimes( theater_data[i].id, get_date_relative_to_today(date_inc) );
-                sleep(wait_time);
+                request_queue['theater_id'].push(theater_data[i].id);
+                request_queue['req_date'].push(get_date_relative_to_today(date_inc));
             }
         }
     }
 
+    // Start the request process
+    request_theater_showtimes_next();
 }
 
 
@@ -243,7 +251,7 @@ function request_theater_dates(theater_code) {
 //   }
 // }
 
-// DISABLED:
+// DISABLED: TODO: DELETE ME
 // Request a list of nearby theaters
 function handle_theater_dates(response, theater_code) {
 
@@ -261,6 +269,18 @@ function handle_theater_dates(response, theater_code) {
                 }
             });
         }
+    }
+}
+
+// Issue next request for theater data
+function request_theater_showtimes_next() {
+
+    if ((request_queue['theater_id'].length > 0) &&
+        (request_queue['req_date'].length > 0)) {
+
+        sleep(wait_time);
+        request_theater_showtimes( request_queue['theater_id'].shift(),
+                                   request_queue['req_date'].shift() );
     }
 }
 
@@ -399,6 +419,8 @@ function parse_showtimes(response, theater_obj) {
 
 
 //    console.log (theater_obj);
+    // Issue next request in queue if present
+    request_theater_showtimes_next();
 }
 
 
@@ -417,10 +439,14 @@ function handle_theater_showtimes(response, theater_code) {
 
 // -> request_theaters_by_zip
 //    -> handle_theaters_by_zip
+//       -> request_theater_showtimes_next
+//          ^  -> request_theater_showtimes (param: theater_id)
+//          ^    -> handle_theater_showtimes  -> +
+//          |                                    |
+//          +---<-<-<---------loop-------<-<-<---+
+
 // DISABLED:      -> request_theater_dates (param: theater_id)
 // DISABLED:         -> handle_theater_dates
-//             -> request_theater_showtimes (param: theater_id)
-//               -> handle_theater_showtimes
 
 
 
