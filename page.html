@@ -1,0 +1,387 @@
+<html>
+<head>
+
+// https://code-maven.com/ajax-request-for-json-data
+
+<script>
+
+var theater_data  = {};
+
+var p_zip        = "PARAM_ZIP_CODE"
+var p_num_result = "PARAM_NUM_RESULTS"
+var p_code       = "PARAM_THEATER_CODE"
+var p_date       = "PARAM_DATE"
+
+// GLOBALS
+var url_theaters_by_zip   = "https://flixster.com/api/backstage/autocomplete/v2?searchText=" + p_zip + "&pageSize=" + p_num_result + "&page=1"
+var url_theater_dates     = "https://flixster.com/api/backstage/theaters/v2/" + p_code + "/display-dates"
+// PARAM_DATE: 2019-09-17
+var url_theater_showtimes = "https://flixster.com/api/backstage/theaters/v2/" + p_code + "/showtime-groupings?startDisplayDate=" + p_date
+
+
+function ajax_get(url, callback) {
+
+    var xmlhttp = new XMLHttpRequest();
+
+    xmlhttp.onreadystatechange = function() {
+
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+
+            // console.log('responseText:' + xmlhttp.responseText);
+
+            try {
+                var data = JSON.parse(xmlhttp.responseText);
+            } catch(err) {
+                console.log(err.message + " in " + xmlhttp.responseText);
+                return;
+            }
+
+            callback(data);
+        }
+    };
+
+    xmlhttp.open("GET", url, true);
+    xmlhttp.send();
+}
+
+
+// Returns MM/DD/YYYY
+function format_date(date) {
+  return date.getMonth()+1 + "/" + date.getDate() + "/" + date.getFullYear()
+}
+
+// Returns H:MM A/PM
+function format_time(date) {
+  var hours = date.getHours();
+  var minutes = date.getMinutes();
+  var ampm = hours >= 12 ? 'pm' : 'am';
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+  minutes = minutes < 10 ? '0'+minutes : minutes;
+  var strTime = hours + ':' + minutes + ' ' + ampm;
+  return strTime;
+}
+
+
+
+// Resets and clears the theater data
+//
+function reset_theater_info()
+{
+    theater_data = {};
+}
+
+
+function get_date_today() {
+    var today = new Date();
+    var dd = String(today.getDate()).padStart(2, '0');
+    var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+    var yyyy = today.getFullYear();
+
+    today = yyyy + '-' + mm + '-' + dd;
+    return (today);
+}
+
+
+// Query reponse dispatcher
+function handle_response(data) {
+
+    // Handle Find by Zip response
+    // Handle Theater Dates response
+    // Handle Theater Showtimes response
+}
+
+
+
+function request_theaters_by_zip(zip_code, num_results) {
+
+    var req_url = url_theaters_by_zip;
+
+    zip_code = zip_code.replace(/[^0-9]+/g, '');  // filter out non-numeric values
+    num_results = num_results.replace(/[^0-9]+/g, '');  // filter out non-numeric values
+    req_url = req_url.replace(p_zip, zip_code);
+    req_url = req_url.replace(p_num_result, num_results);
+
+    console.log (zip_code);
+    console.log (num_results);
+    console.log (req_url);
+
+    ajax_get(req_url, handle_theaters_by_zip );
+}
+
+
+
+// [
+//   {
+//     "id": "qA9uOxfpjtlOiNd",
+//     "name": "Central Cinema",
+//     "link": "https:\/\/www.fandango.com\/central-cinema-AAVPX\/theater-page"
+//   },
+// ...
+
+
+// Request a list of nearby theaters
+function handle_theaters_by_zip(response) {
+
+    // Update glboal var storing theater list
+    reset_theater_info();
+
+    // Copy the JSON theater data into a global var
+    theater_data = response;
+
+    // Query each theater
+    for (var i=0; i < response.length; i++) {
+        if ( response[i].hasOwnProperty('id') ) {
+            // Create theater entry
+
+//            console.log( "Theater " + i + ": " + theater_data[i].name + " (" + theater_data[i].id + ")" );
+// TODO: DISABLED FOR TESTING
+            request_theater_showtimes( theater_data[i].id, get_date_today() );
+        }
+    }
+
+}
+
+
+
+function request_theater_dates(theater_code) {
+}
+
+
+function request_theater_showtimes(theater_code, req_date) {
+
+    var req_url = url_theater_showtimes;
+
+    theater_code = theater_code.replace(/[\W_]+/g,'');   // filter out non-alphanumeric
+    req_date     = req_date.replace(/[^0-9\-]+/g,''); // filter out non-dates
+
+    req_url = req_url.replace(p_code, theater_code);
+    req_url = req_url.replace(p_date, req_date);
+
+//    console.log (theater_code);
+//    console.log (req_date);
+//    console.log (req_url);
+
+    ajax_get(req_url, handle_theater_showtimes );
+}
+
+
+// {
+//   "displayDate": "2019-09-17",
+//   "movieIds": [
+//     {
+//       "idProvider": "fandangoApi",
+         // "value": "qA9uOxfpjtlOiNd"
+
+
+function get_theater_object(response) {
+
+    var theater_obj;
+
+
+    // TODO: make this a function theater_find_id(req_data)
+    // Find theater ID
+    for (var i=0; i < response.movieIds.length; i++) {
+
+        // Loop through theater entries, ID is stored in "value" key
+        if ( response.movieIds[i].hasOwnProperty('value') ) {
+
+            // Compare value key against all stored theater ID entries
+            for (var t=0; t < theater_data.length; t++) {
+
+                if ( theater_data[t].hasOwnProperty('id') ) {
+
+//                    console.log ("Checking ... " + response.movieIds[i].value + " vs " + theater_data[t].id);
+
+                    // Found a match? Set the local theater id to it
+                    if ( response.movieIds[i].value == theater_data[t].id ) {
+
+                        theater_obj = theater_data[i];
+//                        console.log ("Found match " + theater_obj.id);
+
+                        return(theater_obj);
+                    }
+                }
+            }
+        }
+    }
+
+    // No match found, return empty object
+    return (null);
+}
+
+
+
+// theater    date    show    showtimes
+// A1          B1       C1       D1, D2, D3
+//                      C2       D1, D2, D3
+//             B2       C1       D1, D2, D3
+//                      C2       D1, D2, D3
+
+
+function parse_showtimes(response, theater_obj) {
+
+//    if ( ! theater_obj.hasOwnProperty('titles') )
+//        theater_obj.titles = {};
+
+    // Theater name
+    console.log( "Theater " +": " + theater_obj.name + " (" + theater_obj.id + ")" );
+
+    // Theater name is broken <____________------------------------------------------------ TODO
+
+    response.movies.forEach(function (m) {
+        console.log("  >> " + m.title);
+        m.movieVariants.forEach(function (mv) {
+            mv.amenityGroups.forEach(function (ag) {
+                ag.showtimes.forEach(function (showtime) {
+
+                    //showtime.expired;
+                    //showtime.links.href;
+                    //showtime.dateTime.local;
+
+                    //console.log (showtime.dateTime.local);
+
+                    var href = "";
+
+                    var expired = showtime.expired;
+
+                    try { href = showtime.links[0].href; }
+                    catch(err) { }; // console.log(err.message); }
+
+                    var show_date = new Date(showtime.dateTime.local);
+                    var str_date = format_date(show_date);
+                    var str_time = format_time(show_date);
+
+
+                    // console.log("     * " + str_date + " - " + str_time + "  " + href + " " );
+                    console.log("     * " + str_date + " - " + str_time );
+                })
+            })
+        })
+    })
+
+// console.log (response);
+
+/*
+    for (var m=0; m < data.movies.length; m++) {
+        console.log("m:" + m);
+        for (var mv=0; mv < data.movies[m].movieVariants.length; mv++) {
+            console.log("  mv:" + mv);
+            for (var ag=0; ag < data.movies[m].movieVariants[mv].amenityGroups.length; ag++) {
+                console.log("    ag:" + ag);
+                for (var s=0; s < data.movies[m].movieVariants[mv].amenityGroups[ag].showtimes.length; s++) {
+                    console.log("      s:" + s);
+
+//                     theater_obj.titles[ data.movies[m].title ] = {};
+//                     theater_obj.titles[ data.movies[m].title ].showtimes = data.movies[m].movieVariants[mv].amenityGroups[ag].showtimes;
+
+//                     theater_obj.titles[ ].showtimes[s].dateTime.local;
+
+
+//                     theater_obj.shows = ;
+// [n].title
+// theater_obj.shows[n].showtimes[n].time
+
+//                     //theater_obj[title] = '';
+//                     theater_obj[m] = '';
+//                     theater_obj[m].title = data.movies[m].title;
+
+//                     data.movies[m].title;
+//                     data.movies[m].movieVariants[mv].amenityGroups[ag].showtimes[s].dateTime.local;
+//                     data.movies[m].movieVariants[mv].amenityGroups[ag].showtimes[s].expired;
+//                     data.movies[m].movieVariants[mv].amenityGroups[ag].showtimes[s].links.href;
+
+//                     new showtime = Date(data.movies[m].movieVariants[mv].amenityGroups[ag].showtimes[s].dateTime.local);
+//                     format_time(showtime);
+//                     format_time(showtime);
+
+
+//                    theater_data[theater_id][ data.movies[m].title ]
+//                    .showtimes[s].datetime = data.movies[m].movieVariants[mv].amenityGroups[ag].showtimes[s].dateTime.local;
+                    //theatersJSON[theater_id].movies[ data.movies[m].title ].showtimes[s].expired = data.movies[m].movieVariants[mv].amenityGroups[ag].showtimes[s].expired;
+                    console.log (theater_id + "-> " + m + ", " + mv + ", " + ag + ", " + s + " = " + data.movies[m].movieVariants[mv].amenityGroups[ag].showtimes[s].dateTime.local);
+                    // .expired == "true" (movie time is passed
+                }
+            }
+        }
+    }
+*/
+//    console.log ("-- DUMPING --");
+//    console.log (theater_obj);
+}
+
+
+
+// Request a list of nearby theaters
+function handle_theater_showtimes(response) {
+
+    var theater_obj = get_theater_object(response);
+
+    // If a matching theater was found, copy the movie showtime data
+    if (theater_obj)
+        parse_showtimes(response, theater_obj);
+
+}
+
+
+
+
+
+
+function start_request() {
+
+    request_theaters_by_zip("98122", "5");
+}
+
+ start_request();
+
+//theater_data[ 'TEST' ] = 'test2';
+//theater_data[ 'TEST' ].id = 'IDNUM';
+//console.log (theater_data);
+// console.log ('DONE')
+
+/*
+// SIMULATION
+var response;
+var dataTemp;
+
+response = '[ { "id": "qA9uOxfpjtlOiNd", "name": "Central Cinema", "link": "https:\/\/www.fandango.com\/central-cinema-AAVPX\/theater-page" }, { "id": "DGbfBrfVxu2ZHBY", "name": "SIFF Cinema Egyptian", "link": "https:\/\/www.fandango.com\/siff-cinema-egyptian-AAXIX\/theater-page" }, { "id": "62aFWZfYVSgQtB0", "name": "Northwest Film Forum", "link": "https:\/\/www.fandango.com\/northwest-film-forum-AANVC\/theater-page" }, { "id": "kO9fdJfqBiJgu9o", "name": "Regal Meridian & 4DX", "link": "https:\/\/www.fandango.com\/regal-meridian-and-4dx-AABFY\/theater-page" }, { "id": "Lrbfx2fl9CxPUYX", "name": "AMC Pacific Place 11", "link": "https:\/\/www.fandango.com\/amc-pacific-place-11-AAIYA\/theater-page" } ]';
+dataTemp = JSON.parse(response);
+
+handle_theaters_by_zip(dataTemp);
+
+
+response = '{"displayDate":"2019-09-17","movieIds":[{"idProvider":"fandangoApi","value":"62aFWZfYVSgQtB0"},{"idProvider":"tms","value":"AANVC"}],"movies":[{"id":"n5DM6v3w","movieIds":[{"idProvider":"fandangoApi","value":"n5DM6v3w"},{"idProvider":"fandango","value":"37371"}],"title":"Say Amen, Somebody","runtime":100,"mpaaRating":"G","poster":{"contentUrl":"https://images.fandango.com/redesign/static/img/default_poster.png","thumbnailUrl":"https://images.fandango.com/ImageRenderer/100/0/redesign/static/img/default_poster.png/0/redesign/static/img/default_poster.png"},"movieVariants":[{"formatId":"BKE0N3xn","formatName":"35MM","movieVariantId":"G4ndzDNA","amenityGroups":[{"amenities":[],"showtimes":[{"id":1928621074,"links":[{"rel":"ticket-quantity-page","href":"https://tickets.fandango.com/transaction/ticketing/express/ticketboxoffice.aspx?row_count=1928621074&mid=37371&tid=AANVC"}],"type":"Available","dateTime":{"utc":"2019-09-17T22:00:00Z","local":"2019-09-17T15:00:00-07:00"},"expired":true}]}]}],"cast":[],"genres":["Documentary"],"sluggedTitle":"say-amen-somebody"}]}';
+dataTemp = JSON.parse(response);
+//parse_showtimes(dataTemp, 'qA9uOxfpjtlOiNd');
+handle_theater_showtimes(dataTemp);
+
+console.log("==DONE==");
+*/
+
+
+/*
+ajax_get('/try/examples/js/data.json', function(data) {
+    document.getElementById("title").innerHTML = data["title"];
+
+    var html = "<h2>" + data["title"] + "</h2>";
+    html += "<h3>" + data["description"] + "</h3>";
+    html += "<ul>";
+       for (var i=0; i < data["articles"].length; i++) {
+           html += '<li><a href="' + data["articles"][i]["url"] + '">' + data["articles"][i]["title"] + "</a></li>";
+       }
+    html += "</ul>";
+    document.getElementById("text").innerHTML = html;
+});
+*/
+</script>
+
+</head>
+
+<body>
+  <div id="id01"></div>
+</body>
+
+<html>
+
+
