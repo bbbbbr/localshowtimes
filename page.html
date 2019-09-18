@@ -1,10 +1,43 @@
 <html>
 <head>
 
+  <style>
+    body {
+        background-color: #222;
+        font-family: monospace;
+        font-size: 12px;
+        color: lightgrey;
+        font-weight: 400;
+        /* text-decoration: none solid rgb(68, 68, 68); */
+        text-decoration: none solid;
+        font-style: normal;
+        font-variant: normal;
+        text-transform: none;
+        white-space: pre;
+    }
+
+    a {
+      color: #B4E8EF;
+      text-decoration: none;
+    }
+
+    a.expired {
+      color: darkgrey;
+    }
+
+    .title {
+        color:white;
+    }
+
+    .theater {
+        color:lightgrey;
+    }
+    </style>
 
 <script>
 
 var theater_data  = {};
+var str_output    = "";
 
 var p_zip        = "PARAM_ZIP_CODE"
 var p_num_result = "PARAM_NUM_RESULTS"
@@ -18,7 +51,6 @@ var url_theaters_by_zip   = "https://flixster.com/api/backstage/autocomplete/v2?
 var url_theater_dates     = "https://flixster.com/api/backstage/theaters/v2/" + p_code + "/display-dates"
 // PARAM_DATE: 2019-09-17
 var url_theater_showtimes = "https://flixster.com/api/backstage/theaters/v2/" + p_code + "/showtime-groupings?startDisplayDate=" + p_date
-
 
 // https://code-maven.com/ajax-request-for-json-data
 // https://stackoverflow.com/questions/8582663/pass-arguments-into-ajax-onreadystatechange-callback
@@ -73,6 +105,20 @@ function format_time(date) {
     return strTime;
 }
 
+// Max of pad 100 Left
+function pad_l(str,padlen) {
+
+    if (padlen > 100) padlen = 100;
+    return ((Array(100).join(' ') + str).slice(padlen * -1));
+}
+
+
+// Max of pad 100 Right
+function pad_r(str,padlen) {
+
+    if (padlen > 100) padlen = 100;
+    return ((str + (Array(100).join(' '))).substring(0, padlen));
+}
 
 
 // Resets and clears the theater data
@@ -80,6 +126,13 @@ function format_time(date) {
 function reset_theater_info()
 {
     theater_data = {};
+    str_output = "";
+    document.getElementById("output").innerHTML = str_output;
+}
+
+function output_append(str_add) {
+    str_output = str_output + str_add;
+    document.getElementById("output").innerHTML = str_output;
 }
 
 
@@ -113,9 +166,10 @@ function request_theaters_by_zip(zip_code, num_results) {
     req_url = req_url.replace(p_zip, zip_code);
     req_url = req_url.replace(p_num_result, num_results);
 
-    console.log (zip_code);
-    console.log (num_results);
-    console.log (req_url);
+    // console.log (zip_code);
+    // console.log (num_results);
+    // console.log (req_url);
+    output_append("Requesting for zip: " + zip_code);
 
     ajax_get(req_url, handle_theaters_by_zip, '');
 }
@@ -161,8 +215,8 @@ function request_theater_dates(theater_code) {
     theater_code = theater_code.replace(/[\W_]+/g,'');   // filter out non-alphanumeric
     req_url = req_url.replace(p_code, theater_code);
 
-    console.log (theater_code);
-    console.log (req_url);
+//    console.log (theater_code);
+//    console.log (req_url);
 
     ajax_get(req_url, handle_theater_dates, theater_code );
 }
@@ -189,7 +243,7 @@ function handle_theater_dates(response, theater_code) {
                 // Limit max number of date requests
                 if (date_count < date_req_max) {
                     date_count++;
-                    console.log( "Theater: " + theater_code + " @ " + dv );
+//                    console.log( "Theater: " + theater_code + " @ " + dv );
                     request_theater_showtimes( theater_code, dv );
                     sleep(100);
                 }
@@ -209,9 +263,9 @@ function request_theater_showtimes(theater_code, req_date) {
     req_url = req_url.replace(p_code, theater_code);
     req_url = req_url.replace(p_date, req_date);
 
-    console.log (theater_code);
-    console.log (req_date);
-    console.log (req_url);
+//    console.log (theater_code);
+//    console.log (req_date);
+//    console.log (req_url);
 
     ajax_get(req_url, handle_theater_showtimes, theater_code );
 }
@@ -269,11 +323,26 @@ function parse_showtimes(response, theater_obj) {
 
     // Theater name
     console.log( "Theater " +": " + theater_obj.name + " (" + theater_obj.id + ")" );
+    output_append( "<span class=\"theater\">" + "Theater " +": " + theater_obj.name + "\n" + "</span>");
 
     response.movies.forEach(function (m) {
+
+        // Render Title
         console.log("  >> " + m.title);
+
         m.movieVariants.forEach(function (mv) {
+
+            var agcount = 0;
             mv.amenityGroups.forEach(function (ag) {
+
+                agcount++;
+                // Only print Title on first amenity group, otherwise padded blank spaces
+                if (agcount == 1)
+                    output_append( "<span class=\"title\">" + pad_r("  * " + m.title, 45) + "</span>");
+                else
+                    output_append( pad_r(" ", 45) );
+
+                var scount = 0;
                 ag.showtimes.forEach(function (showtime) {
 
                     var href = "";
@@ -286,12 +355,30 @@ function parse_showtimes(response, theater_obj) {
                     var str_date = format_date(show_date);
                     var str_time = format_time(show_date);
 
+                    scount++;
+                    // display show time for first entry only
+                    if (scount == 1)
+                        output_append( pad_r(str_date + " : ", 13) );
+
+                    // output_append("  " + str_time);
+                    if (expired == false)
+                        output_append("<a href=" + href + ">" + pad_l(str_time, 10) + "</a>");
+                    else
+                        output_append("<a class=\"expired\" href=" + href + ">" + pad_l(str_time, 10) + "</a>");
+
                     // console.log("     * " + str_date + " - " + str_time + "  " + href + " " );
                     console.log("     * " + str_date + " - " + str_time );
+
                 });
+                // Closing line break
+                output_append("\n");
             });
         });
     });
+
+    // Closing line break
+    output_append("\n");
+
 
 //    console.log (theater_obj);
 }
@@ -324,12 +411,16 @@ function start_request() {
     request_theaters_by_zip("98122", "5");
 }
 
-start_request();
+window.onload = function () { start_request(); }
+
 
 //var response='{"data":{"displayDates":["2019-09-18","2019-09-19","2019-09-20","2019-09-21","2019-09-22","2019-09-23","2019-09-24","2019-09-25","2019-09-26","2019-09-27","2019-09-28","2019-09-29","2019-09-30","2019-10-01","2019-10-02","2019-10-03","2019-10-06","2019-10-10","2019-10-13","2019-10-27","2019-10-28","2019-10-30","2019-11-14","2019-11-15","2019-11-16","2019-11-17","2019-11-18","2019-11-19","2019-11-20","2019-11-21","2019-12-16","2019-12-18"]}}';
  //handle_theater_dates(JSON.parse(response), 'kO9fdJfqBiJgu9o');
 
 
+// window.onload = function () {
+//     document.getElementById("output").innerHTML = pad_r("  * Ferris Bueller's Day Off (1986)", 45) + "----"
+// }
 
 </script>
 
