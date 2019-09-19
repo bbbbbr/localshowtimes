@@ -16,21 +16,36 @@
     }
 
 
-/* TODO: responsive text sizing for high-dpi displays (laptops & mobile devices) */
-/*
-@media  only screen and (-webkit-min-device-pixel-ratio: 2),
-    only screen and (-o-min-device-pixel-ratio: 20/10),
-    only screen and (min-resolution: 192dpi)
-    {
-        body{font-size: 200%}
-    }
+/* Semi-Responsive text sizing for high-dpi displays (laptops & mobile devices) */
+
 @media  only screen and (-webkit-min-device-pixel-ratio: 1.3),
     only screen and (-o-min-device-pixel-ratio: 13/10),
     only screen and (min-resolution: 120dpi)
     {
-        body{font-size: 150%}
+        body{font-size: 120%; }
+        /* body{ color: lightblue;} */
     }
-*/
+@media  only screen and (-webkit-min-device-pixel-ratio: 2),
+    only screen and (-o-min-device-pixel-ratio: 20/10),
+    only screen and (min-resolution: 192dpi)
+    {
+        body{font-size: 250%; }
+        /* body{ color: lightgreen;} */
+    }
+@media  only screen and (-webkit-min-device-pixel-ratio: 2.5),
+    only screen and (-o-min-device-pixel-ratio: 25/10),
+    only screen and (min-resolution: 288dpi)
+    {
+        body{font-size: 350%;}
+        /* body{ color: pink;} */
+    }
+@media  only screen and (-webkit-min-device-pixel-ratio: 3),
+    only screen and (-o-min-device-pixel-ratio: 30/10),
+    only screen and (min-resolution: 288dpi)
+    {
+        body{font-size: 450%;}
+        /* body{ color: orange;} */
+    }
 
     div#form {
         white-space: nowrap;
@@ -415,9 +430,9 @@ function movie_title_render(movie_obj, ag_count) {
     // Render Title
     // Only print Title on first amenity group, otherwise padded blank spaces
     if (ag_count++ == 0)
-        output_append( "<a class=\"title\" href=\"" + url_movie_rottentomatoes + search_title + "\">" + pad_r("  * " + movie_obj.title, 45) + "</a>");
+        output_append( "<a class=\"title\" href=\"" + url_movie_rottentomatoes + search_title + "\">" + pad_r("* " + movie_obj.title, 30) + "</a>");
     else
-        output_append( pad_r(" ", 45) );
+        output_append( pad_r(" ", 30) );
 }
 
 
@@ -447,9 +462,9 @@ function showtime_render(showtime_obj, s_count) {
 
     // display show time for first entry only
     if (s_count == 1)
-        output_append( pad_r(str_date + " : ", 11) );
+        output_append( " " + pad_r(str_date + " :", 11) );
 
-    output_append("<a class=\"" + show_class + "\" href=" + href + ">" + pad_l(str_time, 10) + "</a>");
+    output_append("<a class=\"" + show_class + "\" href=" + href + ">" + pad_l(str_time, 9) + "</a>");
 }
 
 
@@ -565,9 +580,13 @@ function start_request(zip_code) {
 
     if (zip_code != "")
         request_theaters_by_zip(zip_code, theater_count_max);
+    else
+        document.getElementById('form_zip_code').value = window.devicePixelRatio;
 }
 
 window.onload = function () { start_request(); }
+
+
 
 </script>
 </head>
