@@ -5,7 +5,7 @@
     body {
         background-color: #222;
         font-family: monospace;
-        font-size: 12px;
+        font-size: 14px;
         color: lightgrey;
         font-weight: 400;
         /* text-decoration: none solid rgb(68, 68, 68); */
@@ -65,7 +65,10 @@ var p_num_result = "PARAM_NUM_RESULTS"
 var p_code       = "PARAM_THEATER_CODE"
 var p_date       = "PARAM_DATE"
 
-var date_req_max = 2; // Number of days into the future to request
+
+// TODO: MAKE A SELF TARGETTED FORM FOR THESE
+// CONFIGURABLE SETTINGS
+var date_req_max = 4; // Number of days into the future to request
 var wait_time    = 100; // in msec
 
 // GLOBALS
@@ -91,7 +94,9 @@ function ajax_get(url, callback, param) {
                     var data = JSON.parse(xmlhttp.responseText);
                 } catch(err) {
                     console.log(err.message + " in " + xmlhttp.responseText);
-                    return;
+                    // zero out the data, but allow the callback anyway
+                    data = {};
+                    // return;
                 }
 
                 callback(data, param);
@@ -382,59 +387,61 @@ function parse_showtimes(response, theater_obj) {
         output_append( pad_l(". . . . . .", 15) + pad_l(". . . . . .", 41) + "\n");
     last_theater = theater_obj.name;
 
-    response.movies.forEach(function (m) {
+    if ( response.hasOwnProperty('movies') ) {
+        response.movies.forEach(function (m) {
 
-        // Render Title
-        console.log("  >> " + m.title);
+            // Render Title
+            console.log("  >> " + m.title);
 
-        m.movieVariants.forEach(function (mv) {
+            m.movieVariants.forEach(function (mv) {
 
-            var agcount = 0;
-            mv.amenityGroups.forEach(function (ag) {
+                var agcount = 0;
+                mv.amenityGroups.forEach(function (ag) {
 
-                agcount++;
-                // Only print Title on first amenity group, otherwise padded blank spaces
-                if (agcount == 1)
-                    output_append( "<span class=\"title\">" + pad_r("  * " + m.title, 45) + "</span>");
-                else
-                    output_append( pad_r(" ", 45) );
+                    agcount++;
+                    // Only print Title on first amenity group, otherwise padded blank spaces
+                    if (agcount == 1)
+                        output_append( "<span class=\"title\">" + pad_r("  * " + m.title, 45) + "</span>");
+                    else
+                        output_append( pad_r(" ", 45) );
 
-                var scount = 0;
-                ag.showtimes.forEach(function (showtime) {
+                    var scount = 0;
+                    ag.showtimes.forEach(function (showtime) {
 
-                    // TODO: move to function showtime_render()
+                        // TODO: move to function showtime_render()
 
-                    var href = "";
-                    var show_class = "";
+                        var href = "";
+                        var show_class = "";
 
-                    try { href = showtime.links[0].href; }
-                        catch(err) { }; // console.log(err.message); }
+                        try { href = showtime.links[0].href; }
+                            catch(err) { }; // console.log(err.message); }
 
-                    var show_date = new Date(showtime.dateTime.local);
-                    var str_date = format_date(show_date);
-                    var str_time = format_time(show_date);
+                        var show_date = new Date(showtime.dateTime.local);
+                        var str_date = format_date(show_date);
+                        var str_time = format_time(show_date);
 
-                    if (showtime.expired == true)
-                        show_class = "expired";
-                    else if (show_date.getHours() > 18)
-                        show_class = "late_show";
+                        if (showtime.expired == true)
+                            show_class = "expired";
+                        else if (show_date.getHours() > 18)
+                            show_class = "late_show";
 
-                    scount++;
-                    // display show time for first entry only
-                    if (scount == 1)
-                        output_append( pad_r(str_date + " : ", 13) );
+                        scount++;
+                        // display show time for first entry only
+                        if (scount == 1)
+                            output_append( pad_r(str_date + " : ", 13) );
 
-                    output_append("<a class=\"" + show_class + "\" href=" + href + ">" + pad_l(str_time, 10) + "</a>");
+                        output_append("<a class=\"" + show_class + "\" href=" + href + ">" + pad_l(str_time, 10) + "</a>");
 
-                    // console.log("     * " + str_date + " - " + str_time + "  " + href + " " );
-                    console.log("     * " + str_date + " - " + str_time );
+                        // console.log("     * " + str_date + " - " + str_time + "  " + href + " " );
+                        console.log("     * " + str_date + " - " + str_time );
 
+                    });
+                    // Closing line break
+                    output_append("\n");
                 });
-                // Closing line break
-                output_append("\n");
             });
         });
-    });
+    }
 
 //    // Closing line break
 //    output_append("\n");
