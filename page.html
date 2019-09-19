@@ -411,17 +411,17 @@ function showtime_render(showtime, s_count) {
 //
 function parse_and_render_showtimes(response, theater_obj) {
 
-
-    // Render Theater Name (try to not repeat theater name)
-    if (theater_obj.name != last_theater)
-        output_append( "\n\n<span class=\"theater\">" + "Theater " +": " + theater_obj.name + "\n" + "</span>");
-    else
-        output_append( pad_l(". . . . . .", 15) + pad_l(". . . . . .", 41) + "\n");
-    last_theater = theater_obj.name;
-
     // Parse the returned movies
     // (step through movieVariants and amenityGroups to find showtimes)
     if ( response.hasOwnProperty('movies') ) {
+
+        // Render Theater Name (try to not repeat theater name)
+        if (theater_obj.name != last_theater)
+            output_append( "\n\n<span class=\"theater\">" + "Theater " +": " + theater_obj.name + "\n" + "</span>");
+        else
+            output_append( pad_l(". . . . . .", 15) + pad_l(". . . . . .", 41) + "\n");
+        last_theater = theater_obj.name;
+
         response.movies.forEach(function (m) {
             m.movieVariants.forEach(function (mv) {
 
