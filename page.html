@@ -361,25 +361,46 @@ function request_theater_showtimes(theater_code, req_date) {
 
 
 
+// Render a movie title with a link
+//
+// * Called from parse_and_render_showtimes()
+// * movie_obj : a movie object
+// * ag_count  : should reflect which row this will be for the current movie / amenity group
+//
+function movie_title_render(movie_obj, ag_count) {
+
+    // Strip trailing " (YYYY)" from title if present
+    var search_title = movie_obj.title.replace(/\(?\d{4}\)?/g, '');
+
+    // Render Title
+    // Only print Title on first amenity group, otherwise padded blank spaces
+    if (ag_count++ == 0)
+        output_append( "<a class=\"title\" href=\"" + url_movie_rottentomatoes + search_title + "\">" + pad_r("  * " + movie_obj.title, 45) + "</a>");
+    else
+        output_append( pad_r(" ", 45) );
+}
+
+
+
 // Render a movie showtime with a link
 //
 // * Called from parse_and_render_showtimes()
-// * showtime : an amenityGroups->showtime object
-// * s_count  : should reflect which Nth link this will be for the current movie
+// * showtime_obj : an amenityGroups->showtime object
+// * s_count      : should reflect which Nth link this will be for the current movie
 //
-function showtime_render(showtime, s_count) {
+function showtime_render(showtime_obj, s_count) {
 
     var href = "";
     var show_class = "";
 
-    try { href = showtime.links[0].href; }
+    try { href = showtime_obj.links[0].href; }
         catch(err) { }; // console.log(err.message); }
 
-    var show_date = new Date(showtime.dateTime.local);
+    var show_date = new Date(showtime_obj.dateTime.local);
     var str_date = format_date(show_date);
     var str_time = format_time(show_date);
 
-    if (showtime.expired == true)
+    if (showtime_obj.expired == true)
         show_class = "expired";
     else if (show_date.getHours() > 18)
         show_class = "late_show";
@@ -428,12 +449,7 @@ function parse_and_render_showtimes(response, theater_obj) {
                 var ag_count = 0;
                 mv.amenityGroups.forEach(function (ag) {
 
-                    // Render Title
-                    // Only print Title on first amenity group, otherwise padded blank spaces
-                    if (ag_count++ == 0)
-                        output_append( "<a class=\"title\" href=\"" + url_movie_rottentomatoes + m.title + "\">" + pad_r("  * " + m.title, 45) + "</a>");
-                    else
-                        output_append( pad_r(" ", 45) );
+                    movie_title_render(m, ag_count);
 
                     var s_count = 0;
                     ag.showtimes.forEach(function (showtime) {
