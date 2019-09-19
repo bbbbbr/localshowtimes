@@ -1,7 +1,7 @@
 <html>
 <head>
 
-  <style>
+<style>
     body {
         background-color: #222;
         font-size: 14px;
@@ -101,10 +101,23 @@ var theater_count_max = 5; // Number of days into the future to request
 var date_req_max      = 4; // Number of days into the future to request
 var wait_time         = 100; // in msec
 
-var url_theaters_by_zip   = "https://flixster.com/api/backstage/autocomplete/v2?searchText=" + p_zip + "&pageSize=" + p_num_result + "&page=1"
-var url_theater_dates     = "https://flixster.com/api/backstage/theaters/v2/" + p_code + "/display-dates"
+var url_origin            = "flixster.com";
+
+
+// *** CORS proxy workaround via : https://cors-anywhere.herokuapp.com
+//
+var url_cors_server = "";
+//
+// https://gist.github.com/jesperorb/6ca596217c8dfba237744966c2b5ab1e
+// https://gist.github.com/jimmywarting/ac1be6ea0297c16c477e17f8fbe51347
+//
+// Enable either below to use CORS for cross-origin workaround:
+// url_cors_server = "https://crossorigin.me/";
+url_cors_server = "https://cors-anywhere.herokuapp.com/";
+//
+var url_theaters_by_zip   = url_cors_server + "https://flixster.com/api/backstage/autocomplete/v2?searchText=" + p_zip + "&pageSize=" + p_num_result + "&page=1"
+var url_theater_showtimes = url_cors_server + "https://flixster.com/api/backstage/theaters/v2/" + p_code + "/showtime-groupings?startDisplayDate=" + p_date
 // PARAM_DATE: 2019-09-17
-var url_theater_showtimes = "https://flixster.com/api/backstage/theaters/v2/" + p_code + "/showtime-groupings?startDisplayDate=" + p_date
 
 var url_movie_rottentomatoes = "https://www.rottentomatoes.com/search/?search=";
 
