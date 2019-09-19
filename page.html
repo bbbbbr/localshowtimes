@@ -64,6 +64,7 @@ var p_zip        = "PARAM_ZIP_CODE"
 var p_num_result = "PARAM_NUM_RESULTS"
 var p_code       = "PARAM_THEATER_CODE"
 var p_date       = "PARAM_DATE"
+// var p_movie      = "PARAM_MOVIE_NAME"
 
 
 // TODO: MAKE A SELF TARGETTED FORM FOR THESE
@@ -76,6 +77,9 @@ var url_theaters_by_zip   = "https://flixster.com/api/backstage/autocomplete/v2?
 var url_theater_dates     = "https://flixster.com/api/backstage/theaters/v2/" + p_code + "/display-dates"
 // PARAM_DATE: 2019-09-17
 var url_theater_showtimes = "https://flixster.com/api/backstage/theaters/v2/" + p_code + "/showtime-groupings?startDisplayDate=" + p_date
+
+var url_movie_rottentomatoes = "https://www.rottentomatoes.com/search/?search=";
+
 
 // https://code-maven.com/ajax-request-for-json-data
 // https://stackoverflow.com/questions/8582663/pass-arguments-into-ajax-onreadystatechange-callback
@@ -401,7 +405,7 @@ function parse_showtimes(response, theater_obj) {
                     agcount++;
                     // Only print Title on first amenity group, otherwise padded blank spaces
                     if (agcount == 1)
-                        output_append( "<span class=\"title\">" + pad_r("  * " + m.title, 45) + "</span>");
+                        output_append( "<a class=\"title\" href=\"" + url_movie_rottentomatoes + m.title + "\">" + pad_r("  * " + m.title, 45) + "</a>");
                     else
                         output_append( pad_r(" ", 45) );
 
