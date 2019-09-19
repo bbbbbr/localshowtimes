@@ -434,7 +434,7 @@ function showtime_render(showtime_obj, s_count) {
 
     // display show time for first entry only
     if (s_count == 1)
-        output_append( pad_r(str_date + " : ", 13) );
+        output_append( pad_r(str_date + " : ", 11) );
 
     output_append("<a class=\"" + show_class + "\" href=" + href + ">" + pad_l(str_time, 10) + "</a>");
 }
