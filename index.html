@@ -583,8 +583,8 @@ function start_request(zip_code) {
 
     if (zip_code != "")
         request_theaters_by_zip(zip_code, theater_count_max);
-    else
-        document.getElementById('form_zip_code').value = window.devicePixelRatio;
+//    else
+//        document.getElementById('form_zip_code').value = window.devicePixelRatio;
 }
 
 window.onload = function () { start_request(); }
