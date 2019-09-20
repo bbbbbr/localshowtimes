@@ -427,6 +427,9 @@ function movie_title_render(movie_obj, ag_count) {
     // Strip trailing " (YYYY)" from title if present
     var search_title = movie_obj.title.replace(/\(?\d{4}\)?/g, '');
 
+    // Hide trailing subtitles ("Example: The return number two" -> "Example: ..")
+    movie_obj.title = movie_obj.title.replace(/\:.*/g, '\ ...');
+
     // Render Title
     // Only print Title on first amenity group, otherwise padded blank spaces
     if (ag_count++ == 0)
