@@ -130,8 +130,14 @@ var url_cors_server = "";
 // url_cors_server = "https://crossorigin.me/";
 url_cors_server = "https://cors-anywhere.herokuapp.com/";
 //
-var url_theaters_by_zip   = url_cors_server + "https://flixster.com/api/backstage/autocomplete/v2?searchText=" + p_zip + "&pageSize=" + p_num_result + "&page=1"
-var url_theater_showtimes = url_cors_server + "https://flixster.com/api/backstage/theaters/v2/" + p_code + "/showtime-groupings?startDisplayDate=" + p_date
+// Previous API URLS
+// var url_theaters_by_zip   = url_cors_server + "https://flixster.com/api/backstage/autocomplete/v2?searchText=" + p_zip + "&pageSize=" + p_num_result + "&page=1"
+// var url_theater_showtimes = url_cors_server + "https://flixster.com/api/backstage/theaters/v2/" + p_code + "/showtime-groupings?startDisplayDate=" + p_date
+
+// Current API URLS
+var url_theaters_by_zip   = url_cors_server + "https://flixster.com/api/discoveryApi/autocomplete/v2?searchText=" + p_zip + "&pageSize=" + p_num_result + "&page=1"
+var url_theater_showtimes = url_cors_server + "https://flixster.com/api/discoveryApi/theaters/v2/" + p_code + "/showtime-groupings?startDisplayDate=" + p_date
+
 // PARAM_DATE: 2019-09-17
 
 var url_movie_rottentomatoes = "https://www.rottentomatoes.com/search/?search=";
